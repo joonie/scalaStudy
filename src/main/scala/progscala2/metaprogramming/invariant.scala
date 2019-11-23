@@ -1,3 +1,4 @@
+/*
 // src/main/scala/progscala2/metaprogramming/invariant.scala
 package metaprogramming
 import scala.language.experimental.macros                            // <1>
@@ -28,3 +29,4 @@ object invariant {                                                   // <3>
     q"$predq; ..$invariantStmts"                                     // <10>
   }
 }
+*/
