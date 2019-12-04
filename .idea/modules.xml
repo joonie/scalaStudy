@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scalastudy_3524.iml" filepath="$PROJECT_DIR$/.idea/modules/scalastudy_3524.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scalastudy_3524-build.iml" filepath="$PROJECT_DIR$/.idea/modules/scalastudy_3524-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Programming Scala, Second Edition - Code examples.iml" filepath="$PROJECT_DIR$/.idea/modules/Programming Scala, Second Edition - Code examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Programming Scala, Second Edition - Code examples-build.iml" filepath="$PROJECT_DIR$/.idea/modules/Programming Scala, Second Edition - Code examples-build.iml" />
     </modules>
   </component>
 </project>
