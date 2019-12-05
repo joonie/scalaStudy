@@ -185,4 +185,85 @@
     > 결과는 1~5가 섞여서 찍힘.
     ```
 
+
+
+- 타입 추론
+
+  - jdk 7부터 지원이 되는 다이아몬드 연산자와 비슷하게 처리 가능
+
+  - ```scala
+    1. val map: HashMap[String, Object] = new HashMap
+    2. val map = new HashMap[String, Object]
     
+    위의 1,2번은 동일하다
+    ```
+
+    
+
+  - 명적으로 타입을 지정해야하는 경우
+
+    - var나 val로 변수 선언시 값을 대입하지 않는 경우
+
+      - ex. var name**: String**, val age**: Int**
+
+    - 매개변수
+
+      - ex. def depositFunction(amount**: Money**) = {...}
+
+    - 메서드 안에서 return을 명시적으로 호출하는 경우
+
+    - 메서드가 재귀적인 경우
+
+    - 오버로딩한 둘 이상의 메서드가 있고 그중 한 메서드가 다른 메서드를 호출하는 경우 호출하는 메서드에는 반환타입을 표기해야함
+
+    - ```scala
+      object stringUtils {
+        //인자의 개수가 변할 수 있는 메소드
+        //String*는 0 또는 그 이상의 String이라는 의미
+        def joiner(strings: String*): String = string.mkString("-") 
+      
+        //List를 인자로 받는 메소드
+        def joiner(strings: List[String]) = joiner(strings :_*) //컴파일 오류
+        def joiner(strings: List[String]): String = joiner(strings :_*) //ok
+      }
+      ```
+
+      > strings :_*란 컴파일러에게 주는 힌트.*_
+      >
+      > '_* strings'라는 리스트를 가변 인자목록(*)으로 다루되 타입은 알 수 없지만 추론한 타입(:_)을 사용하라는 뜻.
+      >
+      > ':' 와 '_*' 는 띄어써도 되지만 '\_'와 '\*'는 반드시 붙여써야한다.
+
+    
+
+    - 컴파일러가 추론한 타입이 우리의 의도보다 더 일반적인 경우 (ex. Any)
+
+
+
+- 흔히 하는 실수
+
+  - ```scala
+    scala > def double(i: Int) {2 * i}
+    scala > println(double(2))
+    > 결과는 ()
+    
+    scala > def double(i: Int) = {2 * i} //메서드 앞에 반드시 등호(=)를 붙여줘야한다.
+    scala > println(double(2))
+    > 결과는 4
+    ```
+
+    - 만약 메서드 앞에 등호가 없다면 스칼라는 프로시저로 인식한다.
+
+- 예약어
+
+  | 예약어  | 설명                                                         |
+  | ------- | :----------------------------------------------------------- |
+  | case    | 매치식에서 케이스 절을 시작한다, 케이스 클래스를 정의한다    |
+  | def     | 메서드 선언을 시작한다                                       |
+  | forSome | 사용할 수 있는 구체적인 타입을 제한하기 위한 존재 타입 선언에 사용한다 |
+  | lazy    | val의 계산을 늦춘다                                          |
+  | object  | 싱글턴 선언을 시작한다.                                      |
+  | sealed  | 부모 타입에 적용한다. 그 타입의 모든 파생 타입이 같은 소스 파일에 선언되어야 한다 |
+  | trait   | 상태나 동작을 새로 추가하는 믹스인모듈이다.  또한 자바 인터페이스처럼 메서드를 선언하되 정의는 하고 싶지 않은 경우에도 사용한다 |
+
+  
