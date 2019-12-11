@@ -4,6 +4,14 @@
 
 - 실행
 
+ - REPL(read, eval, print, loop)
+
+  - 스크립트 실행하기
+  
+    ```sh
+    scala src/main/scala/progscala2/introscala/upper1.sc
+    ```
+    
   - Scala 파일을 scalac로 컴파일 한 후에 생성된 class파일을 실행
 
   - ```sh
