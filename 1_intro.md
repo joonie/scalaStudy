@@ -5,14 +5,18 @@
 - 실행
 
  - REPL(read, eval, print, loop)
+ - sc(스크립트) 파일은 변수나 함수등을 클래스로 감쌀 필요가 없는 매우 간단한 작업을 위해 사용한다.
+ - 스크립트 파일을 실행하려면 익명 객체로 감싸서 처리하는 일종의 트릭(trick)이 필요.
+
 
   - 스크립트 실행하기
   
     ```sh
-    scala src/main/scala/progscala2/introscala/upper1.sc
+    $scala
+    scala> load: src/main/scala/progscala2/introscala/upper1.sc
     ```
     
-  - Scala 파일을 scalac로 컴파일 한 후에 생성된 class파일을 실행
+  - Scala 파일을 scalac로 컴파일 한 후에 생성된 class파일을 실행 (편법)
 
   - ```sh
     # 컴파일
