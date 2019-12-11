@@ -266,4 +266,91 @@
   | sealed  | 부모 타입에 적용한다. 그 타입의 모든 파생 타입이 같은 소스 파일에 선언되어야 한다 |
   | trait   | 상태나 동작을 새로 추가하는 믹스인모듈이다.  또한 자바 인터페이스처럼 메서드를 선언하되 정의는 하고 싶지 않은 경우에도 사용한다 |
 
+
+- 문자 리터럴
+
+  ```scala
+  //멀티라인
+  """He exclaimed, "scala is great!" """ (따옴표 정상 노출)
+  """First line \n
+  Second line \t""" (\n와 \t 정상 노출되며 멀티라인 허용)
   
+  //문장 앞뒤 삭제
+  scala> """xxxGoodbyeyyy""".stripPrefix("xxx").stripSuffix("yyy")
+  res12: String = Goodbye
+  
+  ```
+
+- 심벌 리터럴
+
+  - 스칼라는 심벌(symbol)을 지원한다
+  - 심벌이란 같은 이름의 심벌은 실제로 같은 객체를 참조한다는 의미다. (공유하는 값인듯?)
+  - ex. id라는 심벌은 scala.Symbol("id")라는 식을 짧게 줄인 것이며 공백을 포함하는 심벌을 만들고 싶다면 Symbol(" programming scala ")와 같이 Symbol.apply를 사용해야한다.
+
+- 함수리터럴
+
+  ```scala
+  // 아래 두 함수 리터럴은 동일하다 (i: Int, s: String)
+  val f1: (Int, String) => String         = (i, s) => s+i
+  val f2: Function2[Int, String, String]  = (i, s) => s+i
+  ```
+
+- 튜플리터럴 (._로 하며 <u>1부터</u> 시작)
+
+  ```scala
+  // String이 첫 원소, Int가 두번째 원소인 튜플
+  var tuple = ("Programming Scala", 2016)
+  
+  val t1: (Int, String) = (1, "two")
+  val t2: Tuple2[Int, String] = (1, "two")
+  
+  val t = ("Hello", 1, 2.3) // t: (String, Int, Double) = (Hello,1,2.3)                                          
+  println( "Print the whole tuple: " + t )   // (Hello,1,2.3)
+  println( "Print the first item:  " + t._1 ) // Hello                       
+  println( "Print the second item: " + t._2 ) // 1
+  println( "Print the third item:  " + t._3 ) // 2.3
+  
+  val (t1, t2, t3) = ("World", '!', 0x22)                              
+  println( t1 + ", " + t2 + ", " + t3 ) //World, !, 34
+  
+  //리터럴 구문을 사용해서 원소가 3개인 Tuple3 타입의 튜플을 만든다 (원소 개수 지정)
+  val (t4, t5, t6) = Tuple3("World", '!', 0x22)                       
+  println( t4 + ", " + t5 + ", " + t6 )//World, !, 34
+  
+  ```
+
+  - 위 방법 말고도 정의할 수 있는 방법이 더 있다.
+
+    ```scala
+    (1, "one")
+    Tuple2(1, "one")
+    1 -> "one" (-> 말고 화살표 특수문자로 가능) // 화살표는 원소수 2개에서만 가능
+    ```
+
+- 타입과 멤버 임포트(import)
+
+  - 자바(*)와 다르게 스칼라는 ('_')를 사용한다.
+
+  - 사용구간을 지정할 수 있다.
+
+    ```scala
+    def stuffWithBigInteger() = {
+      import java.math.BigInteger.{
+        ONE => _, //밑줄로 지정하면 더이상 보이지 않게 됨으로 다른곳에서 사용이 불가.
+        TEN,
+        ZERO => JAVAZERO
+      }
+    
+      // ONE은 결과적으로 정의되지 않은 상태가 된다.
+      println("ONE : " + ONE) 
+    
+      // 따로 바꾸지 않고 임포트함으로 TEN이라고 하면 java.math.BigInteger.TEN을 가르킴
+      println("TEN : " + TEN) 
+      
+      // java.math.BigInteger.ZERO를 가져오면서 'JAVAZERO'라는 별칭을 부여
+      println("ZERO : " + JAVAZERO)
+    }
+    
+    //ONE과 같이 몇몇 타입이나 메서드를 제외한 나머지 전부를 임포트할 때 이런식으로 하라.
+    ```
+
