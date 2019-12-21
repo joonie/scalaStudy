@@ -25,7 +25,7 @@ object manage {
 }
 
 object TryCatchARM {
-  /** 사용법: scala rounding.TryCatch 파일이름1 파일이름2 ... */
+  /** 사용법: scala rounding.TryCatchARM 파일이름1 파일이름2 ... */
   def main(args: Array[String]) = {
     val sizes = args map (arg => returnFileLength(arg))
     println("Returned sizes: " + (sizes.mkString(", ")))
