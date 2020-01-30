@@ -39,7 +39,7 @@ object PayrollParthenon {                                            // <1>
       (name, salary, rule) <- data
     } yield (name, salary, toDeduction(rule))
   }
-                                                                     // <7>
+                                             // <7>
   def biweeklyPayrollPerEmployeeReportUseCase(data: Seq[EmployeeData]): Unit ={
     val fmt  = "%-10s %6.2f  %5.2f  %5.2f\n"
     val head = "%-10s %-7s  %-5s    %s\n"
