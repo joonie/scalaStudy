@@ -360,3 +360,94 @@
   ```
 
   
+- 집계
+
+  - 주 별 인구별 상위 연도를 구하고 싶다
+
+    - 주를 key로 잡고 해당 key에 대한 인구별 상위 연도를 value로 잡으면 된다.
+
+    ```scala
+    scala> val statesPopulationRDD = sc.textFile("/user/irteamsu/input/statePopulation.csv")
+    scala> val pairRDD = statesPopulationRDD.map(record => record.split(",")).map(t => (t(0), (t(1), t(2)))) //split하고 0번 index를 key로 잡고 (2번, 3번) tuple을 value로 잡는다.
+    ```
+
+  - 연도 별 인구 별 상위 주를 구하고 싶다
+
+    - 연도를 key로 잡고 해당 key에 대한 인구 별 상위 주 들을 value로 잡으면 된다.
+
+    ```scala
+    scala> val statesPopulationRDD = sc.textFile("/user/irteamsu/input/statePopulation.csv")
+    scala> val pairRDD = statesPopulationRDD.map(record => record.split(",")).map(t => (t(1), (t(0), t(2)))) //split하고 2번 index를 key로 잡고 (1번, 3번) tuple을 value로 잡는다.
+    ```
+
+  - 튜플의 pairRDD에 대한 집계함수
+
+    - groupByKey
+
+      - RDD의 각 키 값을 하나의 시퀀스로 그룹핑한다.
+      - 셔플링을 진행하기 때문에 비싼 연산이다, 너무 많은 셔플링을 하게 된다.
+      - 메모리에 모든 키-값 쌍을 보유해야함으로 OOM이 발생할 수 있다.
+      - 키를 통해 해시코드를 만들고 이것을 기준으로 셔플링해서 동일한 파티션의 각 키에 대한 값을 수집.
+
+    - reduceByKey
+
+      - 모든 엘리먼트를 셔플링하지 않고 먼저 로컬에서 일부 기본 집계를 수행한 후에 groupByKey 수행을 진행한다.
+      - 모든 데이터를 전송할 필요가 없기 때문에 전송데이터가 크게 줄어든다.
+      - 결과를 groupByKey와 같지만 성능이 더 좋음.
+      - 하둡 맵리듀스에 익숙하다면 맵리듀스 프로그래밍의 컴바이너와 매우 유사하다.
+
+    - aggregateByKey
+
+      - reduceByKey와 매우 유사하지만 기능이 더 강력함.
+      - 동일한 데이터 타입에서 동작할 필요가 없고 파티션간에 다른 집계를 수행할 수 있다.
+      - key를 합치고 value를 aggregate함.
+
+    - combineByKey
+
+      - 컴바이너를 생성하는 초기 함수를 제외하고 aggregateByKey와 성능이 매우 비슷.
+
+        
+
+  - ```scala
+    
+    //1단계: RDD를 초기화한다.
+    scala> val statesPopulationRDD = sc.textFile("/user/irteamsu/input/statePopulation.csv").filter(_.split(",")(0) != "State") //split 한 것의 0번째가 "State"가 아닌 라인들 추출
+    scala> statesPopulationRDD.take(10)
+    res1: Array[String] = Array(Alabama,2010,4785492, Alaska,2010,714031, Arizona,2010,6408312, Arkansas,2010,2921995, California,2010,37332685, Colorado,2010,5048644, Delaware,2010,899816, District of Columbia,2010,605183, Florida,2010,18849098, Georgia,2010,9713521)
+    
+    //2단계: pairRDD로 변환한다. (지역 별 년도와 일구수 튜블을 생성)
+    scala> val pairRDD = statesPopulationRDD.map(record =>
+         | record.split(",")).map(t => (t(0), (t(1).toInt, t(2).toInt)))
+    scala> pairRDD.take(10)
+    res2: Array[(String, (Int, Int))] = Array((Alabama,(2010,4785492)), (Alaska,(2010,714031)), (Arizona,(2010,6408312)), (Arkansas,(2010,2921995)), (California,(2010,37332685)), (Colorado,(2010,5048644)), (Delaware,(2010,899816)), (District of Columbia,(2010,605183)), (Florida,(2010,18849098)), (Georgia,(2010,9713521)))
+    
+    //3단계: 값을 그룹핑하고 인구를 더한다 (지역별 인구수의 합)
+    scala> val groupedRDD = pairRDD.groupByKey.map(x => {
+         | var sum=0;
+         | x._2.foreach(sum += _._2); //x._2 : x 튜플의 2번째 원소, _._2 : 임의의 앨리먼터의 2번째 원소
+         | (x._1, sum)})
+    
+    //4단계: 키로 값을 리듀싱하고 인구를 더한다.
+    //여기서 reduceByKey는 키로 묶는다는걸 의미하고 x._2+y,_2는 value의 2번째 인자를 모두 더한다는 의미
+    //즉 키값을 기준으로 하나의 year와 합쳐진 인구가 만들어진다. (Montana,(2010,7105432):총 7105432개)
+    scala> val reduceRDD = pairRDD.reduceByKey((x,y) => (x._1, x._2+y._2))
+    .map(x => (x._1, x._2._2)) //(Montana,7105432)...
+    
+    //5단계
+    scala> val initialSet = 0
+    val addToSet = (s: Int, v: (Int, Int)) => s + v._2
+    val mergePartitionSets = (p1: Int, p2: Int) => p1 + p2
+    
+    val aggregatedRDD = pairRDD.aggregateByKey(initialSet)(addToSet, mergePartitionSets)
+    
+    scala> aggregatedRDD.take(10) //(Montana,7105432)...
+    
+    //6단계
+    scala> val createCombiner = (x:(Int, Int)) => x._2
+    scala> val mergeValues = (c:Int, x:(Int, Int)) => c + x._2
+    scala> var mergeCombiners = (c1:Int, c2:Int) => c1 + c2
+    scala> val combinedRDD = pairRDD.combineByKey(createCombiner, mergeValues, mergeCombiners)
+    scala> combinedRDD.take(10) //(Montana,7105432)...
+    ```
+
+    
