@@ -450,4 +450,171 @@
     scala> combinedRDD.take(10) //(Montana,7105432)...
     ```
 
+- 파티션
+
+  - 파티션 개수 : 스파크 설정 파라미터 이며 spark.default.parallelism 또는 클러스터의 코어 개수 중 하나
+  - 파티션이 적으면 일부의 worker만 동작하기 때문에 성능이 저하된다.
+  - 파티션이 너무 많으면 실제보다 많은 자원을 사용하기 때문에 자원 부족 현상이 나타날 수 있다.
+
+  - RDD의 파티션 개수 확인
+
+    ```scala
+    scala> val rdd_one = sc.parallelize(Seq(1,2,3))
+    scala> rdd_one.getNumPartitions //2
+    ```
+
+  - 파티션 방법
+
+    - hashCode 파티션
+
+    - Range 파티션
+
+      ```scala
+      scala> import org.apache.spark.RangePartitioner
+      scala> val statesPopulationRDD = sc.textFile("/user/irteamsu/input/statePopulation.csv")
+      scala> val pairRDD = statesPopulationRDD.map(record => (record.split(",")(0), 1))
+      scala> pairRDD.mapPartitionsWithIndex((i,x) => Iterator(""+i+":"+x.length)).take(10)
+      res1: Array[String] = Array(0:177, 1:174) //partition 2개 (pairRDD.getNumPartitions)
+      
+      scala> val rangePartitioner = new RangePartitioner(5, pairRDD)
+      scala> val rangePartitionedRDD = pairRDD.partitionBy(rangePartitioner)
+      scala> rangePartitionedRDD.mapPartitionsWithIndex((i,x) => Iterator(""+i+":"+x.length)).take(10) //파티션 5개로 변경
+      res3: Array[String] = Array(0:70, 1:63, 2:77, 3:70, 4:71)
+      ```
+
+      - pairRDD.getNumPartitions가 만약 default로 6이었다면 pairRDD는 6개 중 3개의 파티션에 데이터가 모여있었을 것.
+      - 리파티셔닝을 하면 파티션 개수가 6->5로 바뀌고 데이터가 5개의 파티션에 골고루 들어가게 된다.
+
+- 셔플링
+  - 많은 연산을 처리하다보면 새로운 파티션이 생성되거나 축소되거나 병합될 수 있다. -> 리파티셔닝
+    - 조인, 리듀스, 그룹핑, 집계 연산 등이 발생할 때 리파티셔닝 및 셔플링을 유발함.
+      - aggregateBykey, reduceByKey등이 유발.
+      - filter, map, flatMap 등은 셔플링을 유발하지 않음.
+  - 리파티셔닝에 필요한 모든 데이터의 이동을 셔플링(shuffling)이라 한다.
+  - 익스큐터간에 데이터를 교환하기 때문에 이 셔플링 과정에서 많은 성능 지연이 발생한다.
+    - groupby 를 하면 각 익스큐터에서 하나의 익스큐터로 데이터가 모이게 됨.
+
+
+
+- 브로드캐스트 변수
+
+  - 모든 익스큐터에서 사용할 수 있는 공유 변수
+
+  - 모든 익스큐터 메모리에 올라가게 된다.
+
+  - 제거 : unpersist()
+
+  - 정리 : destroy 정리 후 해당 변수를 사용하게 되면 예외가 발생한다.
+
+  - 변수 생성
+
+    ```scala
+    scala> val rdd_one = sc.parallelize(Seq(1,2,3))
+    scala> val i=5
+    scala> val bi = sc.broadcast(i) //브로드캐스트 설정
+    scala> bi.value //5
+    scala> rdd_one.take(5)//1,2,3
+    scala> rdd_one.map(j => j + bi.value).take(5)//6,7,8
+    scala> bi.unpersist //브로드캐스트 제거
     
+    scala> val m = scala.collection.mutable.HashMap(1->2, 2->3, 3->4)
+    scala> val bm = sc.broadcast(m) //브로드캐스트 설정
+    scala> rdd_one.map(j => j * bm.value(j)).take(5)//1*2, 2*3, 3*4
+    scala> m.destroy //브로드캐스트 정리
+    
+    ```
+
+    
+
+- 누산기
+
+  - 카운팅 하는데 사용.
+
+  - LongAccumulator, DoubleAccumulator, CollectionAccumulator[T]
+
+    ```scala
+    scala> val acc1 = sc.longAccumulator("acc1")
+    scala> val someRDD = statesPopulationRDD.map(x => {acc1.add(1); x})
+    scala> acc1.value //0
+    scala> someRDD.count //Long = 351
+    scala> acc1.value //351 someRDD.count를 한 뒤로 351이 할당됨
+    scala> acc1
+    res14: org.apache.spark.util.LongAccumulator = LongAccumulator(id: 364, name: Some(acc1), value: 351)
+    ```
+
+  - AccumulatorV2 클래스를 확장해서 사용할 수 있다.
+
+    ```scala
+    import org.apache.spark.util.AccumulatorV2
+    
+    class MyAccumulator extends AccumulatorV2[Int, Int] {
+      //boolean인지 확인
+         override def isZero: Boolean = ???
+      //누산기를 복사해 다른 누산기를 생성
+         override def copy(): AccumulatorV2[Int, Int] = ???
+      //값 재설정
+         override def reset(): Unit = ???
+      //누산기에 특정 값 추가
+         override def add(v: Int): Unit = ???
+      //2개의 누산기를 병합
+         override def merge(other: AccumulatorV2[Int, Int]): Unit = ???
+      //누산기 값 리턴
+         override def value: Int = ???
+         }
+    
+    case class YearPopulation(year: Int, population: Long)
+    
+    class StateAccumulator extends AccumulatorV2[YearPopulation, YearPopulation] { 
+    
+          private var year = 0 //연도
+          private var population:Long = 0L //인구
+     
+    //인구나 연도가 0이면 true, 그렇지 않으면 false
+          override def isZero: Boolean = year == 0 && population == 0L
+     
+    //누산기를 복사하고 새로운 누산기 리턴
+          override def copy(): StateAccumulator = {  
+               val newAcc = new StateAccumulator  
+               newAcc.year =     this.year  
+               newAcc.population = this.population  
+               newAcc 
+           }
+    
+    //주와 인구를 0으로 재설정
+           override def reset(): Unit = { year = 0 ; population = 0L }
+     
+    //누산기에 값 추가
+           override def add(v: YearPopulation): Unit = { 
+               year += v.year 
+               population += v.population 
+           }
+     
+    //2개의 누산기 병합
+           override def merge(other: AccumulatorV2[YearPopulation, YearPopulation]): Unit={  
+               other match {               
+                   case o: StateAccumulator => {     
+                           year += o.year 
+                           population += o.population    
+                   }    
+                   case _ =>   
+               } 
+            }
+     
+    //누산기 값을 접근하기 위해서 스파크에서 호출할 수 있는 함수
+           override def value: YearPopulation = YearPopulation(year, population)
+    }
+    
+    
+    scala> val statePopAcc = new StateAccumulator
+    scala> sc.register(statePopAcc, "statePopAcc")
+    scala> val statesPopulationRDD = sc.textFile("/user/irteamsu/input/statePopulation.csv").filter(_.split(",")(0) != "State")
+    
+    scala> statesPopulationRDD.map(x => {
+         val toks = x.split(",")
+         val year = toks(1).toInt
+         val pop = toks(2).toLong
+         statePopAcc.add(YearPopulation(year, pop)) x
+         }).count
+    ```
+    
+        

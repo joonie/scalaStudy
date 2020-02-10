@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <profile name="sbt 1" modules="scalastudy_3524" />
-    <profile name="sbt 2" modules=" Second Edition - Code examples, Second Edition - Code examples,Programming Scala,Programming Scala,Programming Scala, Second Edition - Code examples">
+    <profile name="sbt 2" modules=" Second Edition - Code examples, Second Edition - Code examples, Second Edition - Code examples,Programming Scala,Programming Scala,Programming Scala,Programming Scala, Second Edition - Code examples">
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
       <option name="featureWarnings" value="true" />
