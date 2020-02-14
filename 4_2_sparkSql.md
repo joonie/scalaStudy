@@ -138,4 +138,178 @@
 
 - 암시 스키마
 
+  - header를 보고 스키마를 추론할 수 있고 텍스트 파일 라인을 분리하는데 구분자를 지정할 수 있다
+  
+  - ```scala
+    scala> val statesDF = spark.read.option("header", "true").option("inferschema", "true").option("sep", ",").csv("/user/irteamsu/input/statePopulation.csv")
+    ```
+  
+- 명시 스키마
+
+  - 모든 데이터 타입은 types 패키지에 속해있다.
+
+    ```scala
+    import org.apache.spark.sql.types._
+    ```
+
+    
+
+  - StructField 객체의 컬렉션인 StructType을 사용해 스키마를 표현할 수 있다.
+
+    ```scala
+    scala> import org.apache.spark.sql.types.{StructType, IntegerType, StringType}
+    scala> val schema = new StructType().add("i", IntegerType).add("s", StringType)
+    scala> schema.printTreeString
+    root
+     |-- i: integer (nullable = true)
+     |-- s: string (nullable = true)
+    
+    scala> schema.prettyJson
+    res3: String =
+    {
+      "type" : "struct",
+      "fields" : [ {
+        "name" : "i",
+        "type" : "integer",
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "s",
+        "type" : "string",
+        "nullable" : true,
+        "metadata" : { }
+      } ]
+    }
+    ```
+
+  - 인코더
+
+    - 복잡한 데이터 타입을 정의할 때 인코더를 사용한다.
+
+      ```scala
+      scala> import org.apache.spark.sql.Encoders
+      scala> Encoders.product[(Integer, String)].schema.printTreeString
+      root
+       |-- _1: integer (nullable = true)
+       |-- _2: string (nullable = true)
+      
+      scala> case class Record(i: Integer, s: String)
+      scala> Encoders.product[Record].schema.printTreeString
+      root
+       |-- i: integer (nullable = true)
+       |-- s: string (nullable = true)
+      
+      scala> import org.apache.spark.sql.types.DataTypes
+      scala> val arrayType = DataTypes.createArrayType(IntegerTypes)
+      ```
+
+
+
+- 데이터셋 저장
+
+  - 스파크SQL은 DataFrameWriter 인터페이스를 이용해 외부 저장소 시스템에 저장할 수 있다.
+
+    - Parquet, ORC, Text, Hive, Json, CSV, JDBC
+
+    ```scala
+    //statePopulation.csv 복사
+    scala> val statesPopulationDF = spark.read.option("header", "true").option("inferschema", "true").option("seq", ",").csv("/user/irteamsu/input/statePopulation.csv")
+    
+    scala> statesPopulationDF.write.option("header", "true").csv("/user/irteamsu/input/statePopulation_dup.csv")
+    
+    //statesTaxRates.csv 복사
+    scala> val statesTaxRatesDF = spark.read.option("header", "true").option("inferschema", "true").option("seq", ",").csv("/user/irteamsu/input/statesTaxRates.csv")
+    
+    scala> statesPopulationDF.write.option("header", "true").csv("/user/irteamsu/input/statesTaxRates_dup.csv")
+    ```
+
+- 암시 스키마
+
+  - header를 보고 스키마를 추론할 수 있고 텍스트 파일 라인을 분리하는데 구분자를 지정할 수 있다
+  
+  - ```scala
+    scala> val statesDF = spark.read.option("header", "true").option("inferschema", "true").option("sep", ",").csv("/user/irteamsu/input/statePopulation.csv")
+    ```
+  
+- 명시 스키마
+
+  - 모든 데이터 타입은 types 패키지에 속해있다.
+
+    ```scala
+    import org.apache.spark.sql.types._
+    ```
+
+    
+
+  - StructField 객체의 컬렉션인 StructType을 사용해 스키마를 표현할 수 있다.
+
+    ```scala
+    scala> import org.apache.spark.sql.types.{StructType, IntegerType, StringType}
+    scala> val schema = new StructType().add("i", IntegerType).add("s", StringType)
+    scala> schema.printTreeString
+    root
+     |-- i: integer (nullable = true)
+     |-- s: string (nullable = true)
+    
+    scala> schema.prettyJson
+    res3: String =
+    {
+      "type" : "struct",
+      "fields" : [ {
+        "name" : "i",
+        "type" : "integer",
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "s",
+        "type" : "string",
+        "nullable" : true,
+        "metadata" : { }
+      } ]
+    }
+    ```
+
+  - 인코더
+
+    - 복잡한 데이터 타입을 정의할 때 인코더를 사용한다.
+
+      ```scala
+      scala> import org.apache.spark.sql.Encoders
+      scala> Encoders.product[(Integer, String)].schema.printTreeString
+      root
+       |-- _1: integer (nullable = true)
+       |-- _2: string (nullable = true)
+      
+      scala> case class Record(i: Integer, s: String)
+      scala> Encoders.product[Record].schema.printTreeString
+      root
+       |-- i: integer (nullable = true)
+       |-- s: string (nullable = true)
+      
+      scala> import org.apache.spark.sql.types.DataTypes
+      scala> val arrayType = DataTypes.createArrayType(IntegerTypes)
+      ```
+
+
+
+- 데이터셋 저장
+
+  - 스파크SQL은 DataFrameWriter 인터페이스를 이용해 외부 저장소 시스템에 저장할 수 있다.
+
+    - Parquet, ORC, Text, Hive, Json, CSV, JDBC
+
+    ```scala
+    //statePopulation.csv 복사
+    scala> val statesPopulationDF = spark.read.option("header", "true").option("inferschema", "true").option("seq", ",").csv("/user/irteamsu/input/statePopulation.csv")
+    
+    scala> statesPopulationDF.write.option("header", "true").csv("/user/irteamsu/input/statePopulation_dup.csv")
+    
+    //statesTaxRates.csv 복사
+    scala> val statesTaxRatesDF = spark.read.option("header", "true").option("inferschema", "true").option("seq", ",").csv("/user/irteamsu/input/statesTaxRates.csv")
+    
+    scala> statesPopulationDF.write.option("header", "true").csv("/user/irteamsu/input/statesTaxRates_dup.csv")
+    ```
+
+
+
   
