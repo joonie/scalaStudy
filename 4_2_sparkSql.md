@@ -419,5 +419,59 @@
     |      Hawaii|null|    7|
     +------------+----+-----+
     ```
+  
+  - cube
 
+    - 롤업처럼 계층이나 중첩계산을 수행하는데 사용되는 다차원 집계지만 모든 차원에 동일한 연산을 수행한다는 차이점이 있다.
+
+    ```scala
+    scala> statesDF.cube("State", "Year").count.show(5)
+    +------------+----+-----+
+    |       State|Year|count|
+    +------------+----+-----+
+    |South Dakota|2010|    1|
+    |    New York|2012|    1|
+    |  California|2014|    1|
+    |     Wyoming|2014|    1|
+    |      Hawaii|null|    7|
+    +------------+----+-----+
+    ```
+
+  - 윈도우 함수
+
+    ```scala
+    scala> import org.apache.spark.sql.expressions.Window
+    scala> import org.apache.spark.sql.functions.col
+    scala> import org.apache.spark.sql.functions.max
+    
+    scala> val windowSpec = Window.partitionBy("State").orderBy(col("Population").desc).rowsBetween(Window.unboundedPreceding, Window.currentRow)
+    
+    scala> statesDF.select(col("State"), col("Year"), max("Population").over(windowSpec), rank().over(windowSpec)).sort("State", "Year").show(10)
+    |  State|Year| ..| ..
+    |Alabama|2010|4863300|6|
+    |Alabama|2011|4863300|7|
+    |Alabama|2012|4863300|5|
+    |Alabama|2013|4863300|4|
+    |Alabama|2014|4863300|3|
+    |Alabama|2015|4863300|2|
+    |Alabama|2016|4863300|1|
+    | Alaska|2010|741894|7|
+    | Alaska|2011|741894|6|
+    | Alaska|2012|741894|5|
+    
+    //ntiles 사용 (입력 데이터셋을 n개의 부분집합으로 나눈다, 공평하게 데이터를 나누는데 사용)
+    statesDF.select(col("State"), col("Year"), ntile(2).over(windowSpec), rank().over(windowSpec)).sort("State", "Year").show(10)
+    |Alabama|2010|2|6|
+    |Alabama|2011|2|7|
+    |Alabama|2012|2|5|
+    |Alabama|2013|1|4|
+    |Alabama|2014|1|3|
+    |Alabama|2015|1|2|
+    |Alabama|2016|1|1|
+    | Alaska|2010|2|7|
+    | Alaska|2011|2|6|
+    | Alaska|2012|2|5|
+    ```
+
+- 조인
   
