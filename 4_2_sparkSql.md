@@ -474,4 +474,57 @@
     ```
 
 - 조인
-  
+
+  - leftanti
+
+    - 오른쪽에 존재하지 않는 것을 기반으로 왼쪽의 로우만 제공
+    - 왼쪽 중에 오른쪽에 없는 애들 추출 (leftouter에서 null을 제거한 애들 -> 가장 많이 쓰일듯)
+
+  - leftouter
+
+    - 왼쪽의 모든 로우와 오른쪽의 공통 로우를 추가한다. 오른쪽에 값이 없으면 NULL을 채운다
+    - 왼쪽과 오른쪽 모두 추출하지만 오른쪽에 없으면 NULL
+
+  - leftsemi
+
+    - 오른쪽에 존재하는 값을 기반으로 왼쪽에 있는 로우만 제공(오른쪽에 있는 값은 포함하지 않는다)
+    - 왼쪽 오른쪽 둘다 있는 것들과 무슨차이?
+
+  - rightouter
+
+    - 오른쪽의 모든 로우와 왼쪽 및 오른쪽의 공통 로우를 추가해 제공한다. 왼쪽에 로우가 없다면 NULL을 채운다.
+    - 왼쪽 오름쪽 모두 추출하지만 왼쪽에 없으면 NULL
+
+  - outer
+
+    - 왼쪽 오른쪽 모두 합침 (UNION과의 차이점?)
+
+  - cross
+
+    - 왼쪽과 오른쪽 모두 일치시켜 카테시안 교차곱 생성
+
+  - sample
+
+    - INNER JOIN
+
+    ```scala
+    val statesDF = spark.read.option("header", "true").option("inferschema", "true").option("sep", ",").csv("/user/irteamsu/input/statePopulation.csv")
+    
+    val statesDF = spark.read.option("header", "true").option("inferschema", "true").option("sep", ",").csv("/user/irteamsu/input/statesTaxRates.csv")
+    
+    //application에서 처리
+    statesDF.count //350
+    taxDF.count //47
+    var joinDF = statesDF.join(taxDF, statesDF("State") === taxDF("State"), "inner")
+    //inner를 leftouter, rightouter, fullouter, leftanti, leftsemi로 바꿀 수 있음
+    joinDF.show //Dateframe 보여줌
+    joinDF.count //322
+    
+    //spark-sql에서 처리
+    statesDF.createOrReplaceTempView("statesDF") //테이블로 올리기
+    taxDF.createOrReplaceTempView("taxDF") //테이블로 올리기
+    var joinSqlDF = spark.sql("SELECT * FROM statesDF INNER JOIN taxDF ON statesDF.State = taxDF.State")
+    joinDF.show //Dateframe 보여줌
+    joinDF.count //322
+    ```
+
